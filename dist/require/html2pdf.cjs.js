@@ -1,13 +1,12 @@
 /**
  * html2pdf.js v0.9.1
- * Copyright (c) 2018 Erik Koopmans
+ * Copyright (c) 2019 Erik Koopmans
  * Released under the MIT License.
  */
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-require('es6-promise/auto');
 var jsPDF = _interopDefault(require('jspdf'));
 var html2canvas = _interopDefault(require('html2canvas'));
 
@@ -123,12 +122,14 @@ var toPx = function toPx(val, k) {
   return Math.floor(val * k / 72 * 96);
 };
 
+var Promise$1 = require('es6-promise').Promise;
+
 /* ----- CONSTRUCTOR ----- */
 
 var Worker = function Worker(opt) {
   // Create the root parent for the proto chain, and the starting Worker.
-  var root = _extends(Worker.convert(Promise.resolve()), JSON.parse(JSON.stringify(Worker.template)));
-  var self = Worker.convert(Promise.resolve(), root);
+  var root = _extends(Worker.convert(Promise$1.resolve()), JSON.parse(JSON.stringify(Worker.template)));
+  var self = Worker.convert(Promise$1.resolve(), root);
 
   // Set progress, optional settings, and return.
   self = self.setProgress(1, Worker, 1, [Worker]);
@@ -137,7 +138,7 @@ var Worker = function Worker(opt) {
 };
 
 // Boilerplate for subclassing Promise.
-Worker.prototype = Object.create(Promise.prototype);
+Worker.prototype = Object.create(Promise$1.prototype);
 Worker.prototype.constructor = Worker;
 
 // Converts/casts promises into Workers.
@@ -323,7 +324,7 @@ Worker.prototype.toPdf = function toPdf() {
 
     for (var page = 0; page < nPages; page++) {
       // Trim the final page to reduce file size.
-      if (page === nPages - 1) {
+      if (page === nPages - 1 && pxFullHeight % pxPageHeight !== 0) {
         pageCanvas.height = pxFullHeight % pxPageHeight;
         pageHeight = pageCanvas.height * this.prop.pageSize.inner.width / pageCanvas.width;
       }
@@ -529,7 +530,7 @@ Worker.prototype.then = function then(onFulfilled, onRejected) {
   return this.thenCore(onFulfilled, onRejected, function then_main(onFulfilled, onRejected) {
     // Update progress while queuing, calling, and resolving `then`.
     self.updateProgress(null, null, 1, [onFulfilled]);
-    return Promise.prototype.then.call(this, function then_pre(val) {
+    return Promise$1.prototype.then.call(this, function then_pre(val) {
       self.updateProgress(null, onFulfilled);
       return val;
     }).then(onFulfilled, onRejected).then(function then_post(val) {
@@ -541,7 +542,7 @@ Worker.prototype.then = function then(onFulfilled, onRejected) {
 
 Worker.prototype.thenCore = function thenCore(onFulfilled, onRejected, thenBase) {
   // Handle optional thenBase parameter.
-  thenBase = thenBase || Promise.prototype.then;
+  thenBase = thenBase || Promise$1.prototype.then;
 
   // Wrap `this` for encapsulation and bind it to the promise handlers.
   var self = this;
@@ -553,8 +554,8 @@ Worker.prototype.thenCore = function thenCore(onFulfilled, onRejected, thenBase)
   }
 
   // Cast self into a Promise to avoid polyfills recursively defining `then`.
-  var isNative = Promise.toString().indexOf('[native code]') !== -1 && Promise.name === 'Promise';
-  var selfPromise = isNative ? self : Worker.convert(_extends({}, self), Promise.prototype);
+  var isNative = Promise$1.toString().indexOf('[native code]') !== -1 && Promise$1.name === 'Promise';
+  var selfPromise = isNative ? self : Worker.convert(_extends({}, self), Promise$1.prototype);
 
   // Return the promise, after casting it into a Worker and preserving props.
   var returnVal = thenBase.call(selfPromise, onFulfilled, onRejected);
@@ -563,7 +564,7 @@ Worker.prototype.thenCore = function thenCore(onFulfilled, onRejected, thenBase)
 
 Worker.prototype.thenExternal = function thenExternal(onFulfilled, onRejected) {
   // Call `then` and return a standard promise (exits the Worker chain).
-  return Promise.prototype.then.call(this, onFulfilled, onRejected);
+  return Promise$1.prototype.then.call(this, onFulfilled, onRejected);
 };
 
 Worker.prototype.thenList = function thenList(fns) {
@@ -580,13 +581,13 @@ Worker.prototype['catch'] = function (onRejected) {
   if (onRejected) {
     onRejected = onRejected.bind(this);
   }
-  var returnVal = Promise.prototype['catch'].call(this, onRejected);
+  var returnVal = Promise$1.prototype['catch'].call(this, onRejected);
   return Worker.convert(returnVal, this);
 };
 
 Worker.prototype.catchExternal = function catchExternal(onRejected) {
   // Call `catch` and return a standard promise (exits the Worker chain).
-  return Promise.prototype['catch'].call(this, onRejected);
+  return Promise$1.prototype['catch'].call(this, onRejected);
 };
 
 Worker.prototype.error = function error(msg) {
